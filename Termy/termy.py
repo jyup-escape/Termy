@@ -4,21 +4,47 @@ import psutil
 import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QLabel, QTextEdit, QLineEdit, QTreeView, QFileSystemModel, QPushButton, QGridLayout
+    QLabel, QTextEdit, QLineEdit, QTreeView, QFileSystemModel, QPushButton, QGridLayout, QSplashScreen
 )
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtGui import QFont, QPixmap
+def show_splash_screen():
+    splash_pix = QPixmap(800, 600)
+    splash_pix.fill(Qt.black)
 
+    splash = QSplashScreen(splash_pix)
+    splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+    splash.show()
 
+    label = QLabel(splash)
+    label.setText("""
+    ████████╗███████╗██████╗ ███╗   ███╗██╗   ██╗
+    ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║╚██╗ ██╔╝
+       ██║   █████╗  ██████╔╝██╔████╔██║ ╚████╔╝ 
+       ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║  ╚██╔╝  
+       ██║   ███████╗██║  ██║██║ ╚═╝ ██║   ██║   
+       ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝   ╚═╝   
+    """)
+    label.setAlignment(Qt.AlignCenter)
+    label.setStyleSheet("color: #ffa500; font-size: 24px; font-family: 'Courier New';")
+    label.setGeometry(0, 0, 800, 600)
+
+    layout = QVBoxLayout()
+    layout.addWidget(label)
+    splash.setLayout(layout)
+
+    QTimer.singleShot(3000, splash.close) 
+
+    return splash
 class DraggableLineEdit(QLineEdit):
     def __init__(self, parent=None, system_monitor=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
-        self.system_monitor = system_monitor  # SystemMonitorへの参照
+        self.system_monitor = system_monitor
 
     def keyPressEvent(self, event):
         key_text = event.text().upper()
-        if key_text.isalpha() and self.system_monitor:  # 英字キーのみ処理
+        if key_text.isalpha() and self.system_monitor:  
             self.system_monitor.highlight_key(key_text)
         super().keyPressEvent(event)
 
@@ -28,9 +54,36 @@ class SystemMonitor(QMainWindow):
         super().__init__()
         self.setWindowTitle("Termy")
         self.setGeometry(100, 100, 1200, 800)
-        self.setStyleSheet("background-color: black; color: #ffa500;")
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #1e1e1e;
+                color: #ffa500;
+            }
+            QToolBar {
+                background-color: #2e2e2e;
+                border: none;
+            }
+            QToolButton {
+                background-color: #3e3e3e;
+                color: #ffa500;
+                border: 1px solid #4e4e4e;
+                padding: 5px;
+                margin: 2px;
+            }
+            QToolButton:hover {
+                background-color: #4e4e4e;
+            }
+            QLabel {
+                color: #ffa500;
+            }
+            QLineEdit {
+                background-color: #2e2e2e;
+                color: #ffa500;
+                border: 1px solid #4e4e4e;
+            }
+        """)
         self.current_path = os.getcwd()
-        self.key_buttons = {}  # 仮想キーボードのボタンマッピング
+        self.key_buttons = {}  
         self.initUI()
 
     def initUI(self):
@@ -39,7 +92,7 @@ class SystemMonitor(QMainWindow):
         main_layout = QHBoxLayout()
         central_widget.setLayout(main_layout)
 
-        # 左側: ターミナル
+ 
         left_layout = QVBoxLayout()
         self.sys_info_label = QLabel(self)
         self.sys_info_label.setStyleSheet("color: #ffa500; font-size: 18px;")
@@ -57,9 +110,8 @@ class SystemMonitor(QMainWindow):
         """)
         left_layout.addWidget(self.terminal_output)
 
-        # 入力エリア
         input_layout = QHBoxLayout()
-        self.prompt_label = QLabel(f"{self.current_path} $", self)  # 現在のパスを表示
+        self.prompt_label = QLabel(f"{self.current_path} $", self) 
         self.prompt_label.setStyleSheet("color: #ffa500; font-family: 'Courier New'; font-size: 14px;")
         input_layout.addWidget(self.prompt_label)
 
@@ -99,10 +151,16 @@ class SystemMonitor(QMainWindow):
                 background-color: #ff6a00;
                 color: black;
             }
+            QHeaderView::section {
+                background-color: #2e2e2e;
+                color: #ffa500;
+                padding: 5px;
+                border: 1px solid #4e4e4e;
+            }
         """)
         right_layout.addWidget(self.file_system_view, 3)
 
-        # 仮想キーボード
+     
         self.keyboard_layout = QGridLayout()
         self.add_virtual_keyboard()
         keyboard_widget = QWidget()
@@ -209,6 +267,7 @@ class SystemMonitor(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    splash = show_splash_screen()
     window = SystemMonitor()
-    window.show()
+    QTimer.singleShot(3000, window.show)  
     sys.exit(app.exec_())
